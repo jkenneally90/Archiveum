@@ -1,0 +1,19 @@
+[Unit]
+Description=Archiveum Local Archive Companion
+After=network-online.target ollama.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__ARCHIVEUM_USER__
+WorkingDirectory=__ARCHIVEUM_PROJECT_DIR__
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=__ARCHIVEUM_PROJECT_DIR__
+ExecStart=__ARCHIVEUM_PROJECT_DIR__/.venv/bin/python __ARCHIVEUM_PROJECT_DIR__/main.py
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=30
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/
+
+# Logs & temp
+*.log
+*.tmp
+archiveum_data/
+
+# Nova runtime data
+nova_memory*.json
+nova_mood*.json
+nova.log
+
+# Piper voices
+piper-voices/
+
+# Backups
+*_backup_*.json
+
+# Audio output
+*.wav

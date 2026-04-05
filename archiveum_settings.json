@@ -1,0 +1,21 @@
+{
+  "host": "0.0.0.0",
+  "port": 8000,
+  "reload": false,
+  "enable_voice": false,
+  "ollama_chat_url": "http://127.0.0.1:11434/api/chat",
+  "ollama_chat_model": "llama3.1:8b",
+  "ollama_embed_url": "http://127.0.0.1:11434/api/embed",
+  "ollama_embed_model": "nomic-embed-text",
+  "ollama_timeout": 120,
+  "stt_model": "tiny.en",
+  "stt_device": "cpu",
+  "stt_compute_type": "float32",
+  "piper_model_path": "/home/george/Archiveum/piper-voices/en/en_GB/jenny_dioco/medium/en_GB-jenny_dioco-medium.onnx",
+  "piper_device": "plughw:0,0",
+  "voice_sample_rate": 16000,
+  "voice_channels": 1,
+  "voice_frame_duration_ms": 30,
+  "voice_max_record_seconds": 12.0,
+  "voice_silence_timeout_seconds": 1.0
+}

@@ -1,0 +1,35 @@
+# =========================================================
+# Archiveum — Canonical Python Requirements (Jetson Orin Nano)
+# Python 3.10 / JetPack 6.2
+# =========================================================
+
+# Core numerical / utilities
+numpy>=1.24
+
+# Networking
+requests>=2.31
+httpx>=0.27
+
+# Web UI / API
+fastapi>=0.115
+uvicorn>=0.30
+python-multipart>=0.0.9
+pypdf>=5.0
+
+# Audio I/O kept for later voice reintegration
+sounddevice>=0.4.6
+webrtcvad>=2.0.10
+
+# Audio playback support
+pygame>=2.5
+
+# Speech-to-text (Whisper)
+faster-whisper>=1.2.0
+ctranslate2>=4.0
+
+# ---------------------------------------------------------
+# NOTE:
+# Piper TTS is NOT a pip package.
+# It is installed manually (binary + voices).
+# Do NOT add tts-piper here.
+# ---------------------------------------------------------
