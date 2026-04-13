@@ -22,7 +22,8 @@ chroma_data/
 
 # Models and voices (downloaded at runtime)
 piper-voices/
-models/faster-whisper/*/
+models/
+!models/.gitkeep
 
 # Data directory
 archiveum_data/
