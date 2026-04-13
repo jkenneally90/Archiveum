@@ -3073,14 +3073,7 @@ def _render_page(
             {error_block}
             {'' if is_public_user else '<div class="button-row" style="margin-bottom: 12px; gap: 8px; flex-wrap: wrap;"><button id="clear-chat-thread" type="button">Clear Current Chat</button></div>'}
             <!-- Persona selector: hidden in Public Mode -->
-            {'' if is_public_user else f"""<form action="/admin/persona/select" method="post" style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
-              <label style="flex: 1 1 260px;">
-                Persona
-                <select name="persona_id">{_render_persona_options(assistant.settings.current_persona_id or 'nova')}</select>
-              </label>
-              <input type="hidden" name="redirect_to" value="/">
-              <button type="submit">Apply Persona</button>
-            </form>"""}
+            {'' if is_public_user else '<form action="/admin/persona/select" method="post" style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;"><label style="flex: 1 1 260px;">Persona<select name="persona_id">' + _render_persona_options(assistant.settings.current_persona_id or 'nova') + '</select></label><input type="hidden" name="redirect_to" value="/"><button type="submit">Apply Persona</button></form>'}
             {session_controls_html}
             <form id="chat-form" action="/chat" method="post">
               {session_input}
