@@ -3835,14 +3835,7 @@ def _render_persona_page(message: str = "") -> str:
       <hr style="margin: 24px 0; border: none; border-top: 1px solid rgba(77,97,122,0.12);">
       <h3 style="font-size: 1rem; margin-bottom: 12px;">Current Avatars</h3>
       <div class="avatar-library-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 16px;">
-        {''.join(f"""
-        <div class="avatar-library-item" style="text-align: center;">
-          <div style="width: 80px; height: 80px; margin: 0 auto;">
-            {_render_persona_avatar({**p, 'avatar': persona_avatars.get(p['id'], p.get('avatar', '')) if p['id'] in built_in_ids else p.get('avatar', '')}, size="thumbnail")}
-          </div>
-          <p class="muted" style="font-size: 0.75rem; margin-top: 8px;">{escape(p['name'])}</p>
-        </div>
-        """ for p in personas)}
+        {''.join(['<div class="avatar-library-item" style="text-align: center;"><div style="width: 80px; height: 80px; margin: 0 auto;">' + _render_persona_avatar({**p, 'avatar': persona_avatars.get(p['id'], p.get('avatar', '')) if p['id'] in built_in_ids else p.get('avatar', '')}, size="thumbnail") + '</div><p class="muted" style="font-size: 0.75rem; margin-top: 8px;">' + escape(p['name']) + '</p></div>' for p in personas])}
       </div>
     </section>
   </main>
