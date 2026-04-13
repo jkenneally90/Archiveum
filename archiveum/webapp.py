@@ -3065,7 +3065,7 @@ def _render_page(
             <div class="voice-controls-row">
               {voice_controls}
               <!-- Mobile avatar for Admin Mode -->
-              {'' if is_public_user else '<div class="mobile-admin-avatar" onclick="document.getElementById(\'avatar-lightbox\') && document.getElementById(\'avatar-lightbox\').classList.add(\'active\')" title="Click to enlarge">' + _get_current_persona_avatar_html(size='small') + '</div>'}
+              {'' if is_public_user else '<div class="mobile-admin-avatar" onclick="document.getElementById(&quot;avatar-lightbox&quot;) && document.getElementById(&quot;avatar-lightbox&quot;).classList.add(&quot;active&quot;)" title="Click to enlarge">' + _get_current_persona_avatar_html(size='small') + '</div>'}
             </div>
             <h2>Chat With Archiveum</h2>
             <p class="muted">Type below or use voice controls above. Voice and text share the same conversation.</p>
