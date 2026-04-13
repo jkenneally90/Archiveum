@@ -1,8 +1,11 @@
 import os
+import platform
 import subprocess
 import tempfile
 import threading
 import time
+import wave
+from pathlib import Path
 
 
 class PiperTTS:
@@ -22,17 +25,23 @@ class PiperTTS:
         self,
         model_path: str,
         sample_rate: int = 22050,
-        device: str = "plughw:0,0",
-        tmp_dir: str = "/tmp",
+        device: str = "",
+        tmp_dir: str | None = None,
+        command: str = "piper",
     ):
         self.model_path = model_path
         self.sample_rate = sample_rate
-        self.device = device
-        self.tmp_dir = tmp_dir
+        self.platform_name = platform.system().lower()
+        self.device = device or self._default_device()
+        self.tmp_dir = tmp_dir or tempfile.gettempdir()
+        self.command = command
 
         self._play_proc: subprocess.Popen | None = None
+        self._synth_proc: subprocess.Popen | None = None
         self._current_wav_file: str | None = None
         self._lock = threading.Lock()
+        self._is_speaking = False
+        self._stop_event = threading.Event()
 
         self._cleanup_old_temp_files()
 
@@ -66,17 +75,29 @@ class PiperTTS:
 
         self._current_wav_file = None
 
+    @property
+    def is_speaking(self) -> bool:
+        return self._is_speaking
+
     def speak(self, text: str):
         if not text:
             return
 
+        self._stop_event.clear()
+        self._is_speaking = True
+        try:
+            self._do_speak(text)
+        finally:
+            self._is_speaking = False
+    
+    def _do_speak(self, text: str):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir=self.tmp_dir) as f_wav:
             wav_file = f_wav.name
 
         try:
             proc = subprocess.Popen(
                 [
-                    "piper",
+                    self.command,
                     "--model",
                     self.model_path,
                     "--output_file",
@@ -89,6 +110,8 @@ class PiperTTS:
                 stderr=subprocess.DEVNULL,
                 text=True,
             )
+            with self._lock:
+                self._synth_proc = proc
             proc.stdin.write(text)
             proc.stdin.close()
             proc.wait()
@@ -99,7 +122,54 @@ class PiperTTS:
             except Exception:
                 pass
             return
+        finally:
+            with self._lock:
+                if self._synth_proc is proc if 'proc' in locals() else False:
+                    self._synth_proc = None
 
+        self._play_wav(wav_file)
+
+    def stop(self):
+        self._stop_event.set()
+        if self.platform_name == "windows":
+            self._stop_windows_playback()
+
+        with self._lock:
+            proc = self._play_proc
+            synth_proc = self._synth_proc
+
+            if proc and proc.poll() is None:
+                try:
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=0.2)
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                except Exception:
+                    pass
+
+            if synth_proc and synth_proc.poll() is None:
+                try:
+                    synth_proc.terminate()
+                    try:
+                        synth_proc.wait(timeout=0.2)
+                    except subprocess.TimeoutExpired:
+                        synth_proc.kill()
+                except Exception:
+                    pass
+
+            self._play_proc = None
+            self._synth_proc = None
+            self._cleanup_locked()
+
+    def _play_wav(self, wav_file: str) -> None:
+        if self.platform_name == "windows":
+            self._play_wav_windows(wav_file)
+            return
+
+        self._play_wav_posix(wav_file)
+
+    def _play_wav_posix(self, wav_file: str) -> None:
         cmd_play = ["aplay", "-D", self.device, wav_file]
         print("-> Playing audio with:", " ".join(cmd_play))
 
@@ -127,19 +197,59 @@ class PiperTTS:
                 self._play_proc = None
                 self._cleanup_locked()
 
-    def stop(self):
+    def _play_wav_windows(self, wav_file: str) -> None:
+        try:
+            import winsound
+
+            duration_seconds = self._wav_duration_seconds(wav_file)
+            with self._lock:
+                self._current_wav_file = wav_file
+                self._play_proc = None
+
+            winsound.PlaySound(wav_file, winsound.SND_FILENAME | winsound.SND_ASYNC)
+            threading.Thread(
+                target=self._cleanup_windows_wav_after_playback,
+                args=(wav_file,),
+                daemon=True,
+            ).start()
+            # winsound playback is asynchronous on Windows, so keep this call
+            # blocked until playback should be finished to avoid re-enabling STT
+            # while Archiveum is still speaking.
+            self._stop_event.wait(timeout=max(duration_seconds, 0.1) + 0.35)
+        except Exception as exc:
+            print(f"[Piper] Windows playback error: {exc}")
+            with self._lock:
+                self._cleanup_locked()
+
+    def _cleanup_windows_wav_after_playback(self, wav_file: str) -> None:
+        duration_seconds = self._wav_duration_seconds(wav_file)
+        time.sleep(max(duration_seconds, 0.1) + 0.25)
         with self._lock:
-            proc = self._play_proc
+            if self._current_wav_file == wav_file:
+                self._cleanup_locked()
 
-            if proc and proc.poll() is None:
-                try:
-                    proc.terminate()
-                    try:
-                        proc.wait(timeout=0.2)
-                    except subprocess.TimeoutExpired:
-                        proc.kill()
-                except Exception:
-                    pass
+    def _wav_duration_seconds(self, wav_file: str) -> float:
+        try:
+            with wave.open(wav_file, "rb") as wav:
+                frame_rate = wav.getframerate() or 1
+                return wav.getnframes() / float(frame_rate)
+        except Exception:
+            return 0.0
 
-            self._play_proc = None
-            self._cleanup_locked()
+    def _stop_windows_playback(self) -> None:
+        try:
+            import winsound
+
+            winsound.PlaySound(None, 0)
+        except Exception:
+            pass
+
+    def _default_device(self) -> str:
+        if self.platform_name == "windows":
+            return "windows-default"
+        return "plughw:0,0"
+
+    def playback_backend(self) -> str:
+        if self.platform_name == "windows":
+            return "winsound"
+        return "aplay"

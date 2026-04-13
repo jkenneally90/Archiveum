@@ -7,7 +7,6 @@ import uvicorn
 from archiveum.assistant import ArchiveumAssistant
 from archiveum.config import ensure_settings_file, load_settings
 from archiveum.diagnostics import startup_messages
-from archiveum.voice import ArchiveumVoiceAssistant
 
 
 def main() -> None:
@@ -18,19 +17,13 @@ def main() -> None:
     print("-> Starting Archiveum...")
     print(f"   Settings: {settings_path}")
     print(f"   Web UI: http://{shared_assistant.settings.host}:{shared_assistant.settings.port}")
+    print(f"   Ollama chat URL: {shared_assistant.settings.ollama_chat_url}")
+    print(f"   Ollama embed URL: {shared_assistant.settings.ollama_embed_url}")
     print("   Motion arbitration: disabled")
     print("   Retrieval: embeddings + vector similarity")
     for line in startup_messages(diagnostics):
         print(f"   {line}")
-
-    voice_assistant: ArchiveumVoiceAssistant | None = None
-    if shared_assistant.settings.enable_voice:
-        voice_assistant = ArchiveumVoiceAssistant(shared_assistant)
-        started, detail = voice_assistant.start()
-        print(f"   Voice mode: {'enabled' if started else 'disabled'}")
-        print(f"   Voice detail: {detail}")
-    else:
-        print("   Voice mode: disabled")
+    print("   Voice mode: available in the Web UI")
 
     try:
         uvicorn.run(
@@ -40,9 +33,7 @@ def main() -> None:
             reload=shared_assistant.settings.reload,
         )
     finally:
-        if voice_assistant is not None:
-            voice_assistant.stop()
-            time.sleep(0.2)
+        time.sleep(0.2)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,9 @@ SERVICE_SRC="$PROJECT_DIR/deploy/archiveum.service"
 RENDERED_SERVICE="$PROJECT_DIR/archiveum_data/archiveum.service.rendered"
 SERVICE_DEST="/etc/systemd/system/archiveum.service"
 CURRENT_USER="${SUDO_USER:-${USER:-$(id -un)}}"
+ENABLE_AUTOSTART="${ENABLE_AUTOSTART:-false}"
+DESKTOP_START_SHORTCUT="${DESKTOP_START_SHORTCUT:-false}"
+DESKTOP_STOP_SHORTCUT="${DESKTOP_STOP_SHORTCUT:-false}"
 
 log() {
   printf '\n[Archiveum] %s\n' "$1"
@@ -21,6 +24,84 @@ require_cmd() {
   fi
 }
 
+ollama_model_bootstrap() {
+  if ! command -v ollama >/dev/null 2>&1; then
+    log "Ollama CLI not found on PATH; skipping Ollama model setup"
+    return 0
+  fi
+
+  if [[ ! -f "$SETTINGS_PATH" ]]; then
+    log "Settings file not found at $SETTINGS_PATH; skipping Ollama model setup"
+    return 0
+  fi
+
+  local arch
+  arch="$(uname -m 2>/dev/null || true)"
+
+  local chat_model
+  local embed_model
+  chat_model="$($PYTHON_BIN - <<'PY'
+import json
+import os
+from pathlib import Path
+
+settings_path = Path(os.environ["SETTINGS_PATH"])
+data = json.loads(settings_path.read_text(encoding="utf-8"))
+print(str(data.get("ollama_chat_model", "llama3.1:8b")).strip())
+PY
+  )"
+  embed_model="$($PYTHON_BIN - <<'PY'
+import json
+import os
+from pathlib import Path
+
+settings_path = Path(os.environ["SETTINGS_PATH"])
+data = json.loads(settings_path.read_text(encoding="utf-8"))
+print(str(data.get("ollama_embed_model", "nomic-embed-text")).strip())
+PY
+  )"
+
+  if [[ "$arch" == "aarch64" && "$chat_model" == "llama3.1:8b" ]]; then
+    printf '\n[Archiveum] Detected Jetson-style ARM64 (%s). The default chat model (%s) can fail on smaller devices.\n' "$arch" "$chat_model"
+    printf '[Archiveum] Switch to a smaller Ollama chat model (qwen2.5:1.5b) for better Jetson compatibility? [y/N] '
+    read -r switch_model_now
+    if [[ "${switch_model_now:-n}" =~ ^[Yy]$ ]]; then
+      SETTINGS_PATH="$SETTINGS_PATH" OLLAMA_CHAT_MODEL="qwen2.5:1.5b" "$PYTHON_BIN" - <<'PY'
+import json
+import os
+from pathlib import Path
+
+settings_path = Path(os.environ["SETTINGS_PATH"])
+data = json.loads(settings_path.read_text(encoding="utf-8"))
+data["ollama_chat_model"] = os.environ["OLLAMA_CHAT_MODEL"]
+settings_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+print(data["ollama_chat_model"])
+PY
+      chat_model="qwen2.5:1.5b"
+    fi
+  fi
+
+  if [[ "${PULL_OLLAMA_MODELS:-}" == "true" ]]; then
+    log "Pulling Ollama models (PULL_OLLAMA_MODELS=true)"
+  else
+    printf '\n[Archiveum] Ollama detected. Pull required models now? [y/N] '
+    read -r pull_models_now
+    if [[ ! "${pull_models_now:-n}" =~ ^[Yy]$ ]]; then
+      log "Skipping Ollama model pull"
+      printf '[Archiveum] If chat requests fail (HTTP 500), ensure these models are installed:\n'
+      printf '  ollama pull %s\n' "$chat_model"
+      printf '  ollama pull %s\n' "$embed_model"
+      return 0
+    fi
+  fi
+
+  log "Pulling Ollama chat model: $chat_model"
+  ollama pull "$chat_model"
+
+  log "Pulling Ollama embed model: $embed_model"
+  ollama pull "$embed_model"
+}
+
 install_venv() {
   log "Creating virtual environment"
   "$PYTHON_BIN" -m venv "$VENV_DIR"
@@ -30,6 +111,43 @@ install_venv() {
 
   log "Installing Python requirements"
   "$VENV_DIR/bin/pip" install -r "$PROJECT_DIR/requirements.txt"
+}
+
+install_local_stt_models() {
+  log "Preparing local speech-to-text models (faster-whisper)"
+
+  if [[ ! -x "$VENV_DIR/bin/python" ]]; then
+    printf '[Archiveum] Cannot install STT models: missing venv python at %s\n' "$VENV_DIR/bin/python" >&2
+    return 1
+  fi
+
+  local target_root="$PROJECT_DIR/models/faster-whisper"
+  mkdir -p "$target_root"
+
+  ARCHIVEUM_STT_TARGET_ROOT="$target_root" "$VENV_DIR/bin/python" - <<'PY'
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from huggingface_hub import snapshot_download
+
+target_root = Path(os.environ["ARCHIVEUM_STT_TARGET_ROOT"]).resolve()
+
+models = [
+    ("Systran/faster-whisper-tiny.en", target_root / "tiny.en"),
+    ("Systran/faster-whisper-tiny", target_root / "tiny"),
+]
+
+for repo_id, target in models:
+    target.mkdir(parents=True, exist_ok=True)
+    snapshot_download(
+        repo_id=repo_id,
+        local_dir=str(target),
+        local_dir_use_symlinks=False,
+    )
+    print(f"[Archiveum] Speech model saved to {target}")
+PY
 }
 
 configure_settings() {
@@ -62,6 +180,7 @@ fallback_piper = project_dir / "models" / "piper" / "en_GB-northern_english_male
 chosen_piper = default_piper if default_piper.exists() else fallback_piper
 
 data["enable_voice"] = voice_enabled
+data["piper_command"] = "piper"
 data["piper_model_path"] = str(chosen_piper)
 
 settings_path.write_text(
@@ -98,6 +217,83 @@ install_service() {
   sudo systemctl --no-pager --full status archiveum.service || true
 }
 
+enable_autostart() {
+  if [[ "$ENABLE_AUTOSTART" != "true" ]]; then
+    return
+  fi
+
+  log "Setting up browser autostart on Ubuntu"
+
+  local autostart_dir="$HOME/.config/autostart"
+  mkdir -p "$autostart_dir"
+
+  local desktop_file="$autostart_dir/archiveum-browser.desktop"
+  cat > "$desktop_file" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Archiveum Browser
+Exec=$PROJECT_DIR/scripts/start_archiveum_browser.sh
+Terminal=false
+EOF
+
+  chmod +x "$PROJECT_DIR/scripts/start_archiveum_browser.sh"
+
+  log "Created desktop entry at: $desktop_file"
+}
+
+create_desktop_shortcuts() {
+  local create_start="${1:-false}"
+  local create_stop="${2:-false}"
+
+  if [[ "$create_start" != "true" && "$create_stop" != "true" ]]; then
+    return
+  fi
+
+  log "Creating desktop shortcuts"
+
+  # Detect Desktop directory
+  local desktop_dir="$HOME/Desktop"
+  if [[ ! -d "$desktop_dir" && -d "$HOME/.local/share/desktop-directories" ]]; then
+    desktop_dir="$HOME/.local/share/desktop-directories"
+  fi
+  mkdir -p "$desktop_dir"
+
+  chmod +x "$PROJECT_DIR/scripts/start_archiveum_browser.sh"
+  chmod +x "$PROJECT_DIR/scripts/stop_archiveum.sh"
+
+  if [[ "$create_start" == "true" ]]; then
+    local start_file="$desktop_dir/Start-Archiveum.desktop"
+    cat > "$start_file" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Start Archiveum
+Comment=Start Archiveum and open web interface
+Exec=$PROJECT_DIR/scripts/start_archiveum_browser.sh
+Icon=media-playback-start
+Terminal=false
+Categories=Utility;
+EOF
+    chmod +x "$start_file"
+    log "Created desktop shortcut: Start Archiveum"
+  fi
+
+  if [[ "$create_stop" == "true" ]]; then
+    local stop_file="$desktop_dir/Stop-Archiveum.desktop"
+    cat > "$stop_file" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Stop Archiveum
+Comment=Stop running Archiveum
+Exec=$PROJECT_DIR/scripts/stop_archiveum.sh
+Icon=media-playback-stop
+Terminal=false
+Categories=Utility;
+EOF
+    chmod +x "$stop_file"
+    log "Created desktop shortcut: Stop Archiveum"
+  fi
+}
+
 main() {
   require_cmd "$PYTHON_BIN"
   require_cmd sudo
@@ -108,6 +304,23 @@ main() {
 
   install_venv
   configure_settings
+
+  SETTINGS_PATH="$SETTINGS_PATH" ollama_model_bootstrap
+
+  if [[ "${INSTALL_STT_MODELS:-}" == "true" ]]; then
+    install_local_stt_models
+  else
+    printf '\n[Archiveum] Download the local Whisper speech models now (tiny.en + tiny)? [y/N] '
+    read -r install_stt_now
+    if [[ "${install_stt_now:-n}" =~ ^[Yy]$ ]]; then
+      install_local_stt_models
+    else
+      log "Skipping local speech model download"
+      printf '[Archiveum] Voice mode will stay unavailable until you download a local STT model into: %s\n' "$PROJECT_DIR/models/faster-whisper"
+      printf '[Archiveum] Re-run with INSTALL_STT_MODELS=true to download automatically.\n'
+    fi
+  fi
+
   run_self_test
 
   printf '\n[Archiveum] Install the systemd service now? [y/N] '
@@ -119,6 +332,30 @@ main() {
     printf '[Archiveum] You can install it later with:\n'
     printf '  sed -e "s|__ARCHIVEUM_USER__|%s|g" -e "s|__ARCHIVEUM_PROJECT_DIR__|%s|g" %s | sudo tee %s >/dev/null\n' "$CURRENT_USER" "$PROJECT_DIR" "$SERVICE_SRC" "$SERVICE_DEST"
     printf '  sudo systemctl daemon-reload && sudo systemctl enable --now archiveum.service\n'
+  fi
+
+  printf '\n[Archiveum] Enable browser autostart on login? [y/N] '
+  read -r enable_autostart_now
+  if [[ "${enable_autostart_now:-n}" =~ ^[Yy]$ ]]; then
+    ENABLE_AUTOSTART="true"
+    enable_autostart
+  else
+    log "Skipping browser autostart setup"
+  fi
+
+  # Desktop shortcuts
+  if [[ "$DESKTOP_START_SHORTCUT" == "true" || "$DESKTOP_STOP_SHORTCUT" == "true" ]]; then
+    create_desktop_shortcuts "$DESKTOP_START_SHORTCUT" "$DESKTOP_STOP_SHORTCUT"
+  else
+    printf '\n[Archiveum] Create desktop shortcuts for starting/stopping Archiveum? [y/N] '
+    read -r desktop_shortcuts
+    if [[ "${desktop_shortcuts:-n}" =~ ^[Yy]$ ]]; then
+      printf '[Archiveum] Create Start Archiveum shortcut? [y/N] '
+      read -r start_shortcut
+      printf '[Archiveum] Create Stop Archiveum shortcut? [y/N] '
+      read -r stop_shortcut
+      create_desktop_shortcuts "$([[ "$start_shortcut" =~ ^[Yy]$ ]] && echo true || echo false)" "$([[ "$stop_shortcut" =~ ^[Yy]$ ]] && echo true || echo false)"
+    fi
   fi
 
   log "Done"

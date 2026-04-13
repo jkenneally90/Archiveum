@@ -1,0 +1,22 @@
+{
+  "ollama_chat_model": "llama3.2:latest",
+  "ollama_embed_model": "llama3.2:latest",
+  "current_persona_id": "nova",
+  "custom_system_prompt": "",
+  "speak_responses": true,
+  "enable_voice": true,
+  "piper_device": "windows-default",
+  "stt_model": "models/faster-whisper/base.en",
+  "custom_upload_categories": [],
+  "custom_personas": [],
+  "persona_avatars": {
+    "nova": "nova_69d70448.png",
+    "researcher": "researcher_a00ecb59.png",
+    "storyteller": "storyteller_69d70448.png",
+    "gentle_companion": "gentle_companion_25d51e9f.png"
+  },
+  "public_mode": false,
+  "public_mode_persona_id": "nova",
+  "session_timeout_minutes": 30,
+  "admin_password_hash": ""
+}

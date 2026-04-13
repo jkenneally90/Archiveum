@@ -15,6 +15,7 @@ fastapi>=0.115
 uvicorn>=0.30
 python-multipart>=0.0.9
 pypdf>=5.0
+python-docx>=1.1.2
 
 # Audio I/O kept for later voice reintegration
 sounddevice>=0.4.6
@@ -26,6 +27,9 @@ pygame>=2.5
 # Speech-to-text (Whisper)
 faster-whisper>=1.2.0
 ctranslate2>=4.0
+
+# Model downloads from Hugging Face
+huggingface_hub>=0.25.0
 
 # ---------------------------------------------------------
 # NOTE:

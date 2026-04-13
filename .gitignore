@@ -15,8 +15,20 @@ nova_memory*.json
 nova_mood*.json
 nova.log
 
-# Piper voices
+# User content and data
+uploads/
+chat_history/
+chroma_data/
+
+# Models and voices (downloaded at runtime)
 piper-voices/
+models/faster-whisper/*/
+
+# Data directory
+archiveum_data/
+
+# User settings (contains passwords and local paths)
+archiveum_settings.json
 
 # Backups
 *_backup_*.json

@@ -1,0 +1,271 @@
+# Achiveum — Internal Company Profile & Office Navigation Guide
+
+## Purpose of Document
+
+This document provides a **comprehensive internal overview of Achiveum**, including employee roles, office layout, and navigation guidance. It is designed to support internal systems (including AI assistants) in answering location-based and personnel-related queries.
+
+---
+
+# 1. Company Overview
+
+Achiveum is a private, experimental technology company focused on building **self-contained, privacy-first AI systems** that prioritize continuity, ownership, and personal intelligence.
+
+Founded by:
+
+* George (Director of Experience)
+* Alice (Director of Cognitive Systems)
+* James (Director of Engineering)
+
+The company operates from a **three-floor office building**, structured to reflect workflow hierarchy and collaboration efficiency.
+
+---
+
+# 2. Building Overview
+
+### Structure
+
+* **Floor 3 (Top Floor): Executive & Strategy**
+* **Floor 2 (Middle Floor): Marketing & Sales**
+* **Floor 1 (Ground Floor): Development, Production & Design**
+
+### General Navigation Rules
+
+* Main entrance is on **Floor 1**
+* Central staircase and lift are located in the **middle of each floor**
+* Each floor is divided into **East Wing (right from stairs)** and **West Wing (left from stairs)**
+
+---
+
+# 3. Employee Directory (20 Staff Members)
+
+## Executive Floor (Floor 3) — 6 Employees
+
+### 1. George — Director of Experience
+
+* Office: **3E-01 (East Wing, first office on right)**
+* Large corner office with glass walls
+
+### 2. Alice — Director of Cognitive Systems
+
+* Office: **3E-02 (next to George)**
+* Adjacent office with shared internal access door to George
+
+### 3. James — Director of Engineering
+
+* Office: **3W-01 (West Wing, first office on left)**
+* Contains hardware prototypes and testing bench
+
+### 4. Sarah Bennett — Head of Strategy
+
+* Office: **3E-03**
+* Positioned opposite Alice
+
+### 5. Daniel Cross — Legal & Compliance Lead
+
+* Office: **3W-02**
+* Located next to James
+
+### 6. Emma Clarke — Executive Assistant
+
+* Desk: **Central reception desk (Floor 3 lobby)**
+* Manages executive scheduling
+
+---
+
+## Marketing & Sales Floor (Floor 2) — 7 Employees
+
+### 7. Olivia Hart — Head of Marketing
+
+* Office: **2E-01**
+
+### 8. Liam Foster — Sales Manager
+
+* Office: **2W-01**
+
+### 9. Chloe Simmons — Brand Strategist
+
+* Desk: **2E Open Workspace (Desk E3)**
+
+### 10. Noah Patel — Digital Marketing Specialist
+
+* Desk: **2E Open Workspace (Desk E4)**
+
+### 11. Ava Reed — Content Manager
+
+* Desk: **2E Open Workspace (Desk E2)**
+
+### 12. Ethan Brooks — Account Executive
+
+* Desk: **2W Sales Area (Desk W2)**
+
+### 13. Mia Collins — Client Relations
+
+* Desk: **2W Sales Area (Desk W3)**
+
+---
+
+## Development, Production & Design Floor (Floor 1) — 7 Employees
+
+### 14. Lucas Grant — Lead Systems Engineer
+
+* Office: **1W-01**
+
+### 15. Sophia Turner — AI Developer
+
+* Desk: **1W Dev Bay (Desk W4)**
+
+### 16. Jack Wilson — Hardware Engineer
+
+* Lab Station: **1W Hardware Lab**
+
+### 17. Grace Hall — UX/UI Designer
+
+* Desk: **1E Design Studio (Desk E1)**
+
+### 18. Henry Adams — Product Designer
+
+* Desk: **1E Design Studio (Desk E2)**
+
+### 19. Lily Scott — Production Coordinator
+
+* Desk: **1E Production Desk (near storage area)**
+
+### 20. Tom Baker — Facilities & Maintenance (Cleaner)
+
+* Storage Room: **1W Utility Room**
+* Moves throughout all floors
+
+---
+
+# 4. Floor Layout Details & Directions
+
+---
+
+## FLOOR 1 — Development, Production & Design
+
+### Layout
+
+* **Reception desk directly ahead upon entry**
+* Stairs/lift in the **center**
+* West Wing: Engineering & Hardware
+* East Wing: Design & Production
+
+### Directions Example
+
+* **To reach Lucas (1W-01):**
+
+  * Enter building
+  * Walk straight to stairs
+  * Turn left (West Wing)
+  * First office on the left
+
+* **To reach Grace (Design Studio):**
+
+  * Enter building
+  * Turn right (East Wing)
+  * Walk past glass wall studio
+  * First desk inside design room
+
+---
+
+## FLOOR 2 — Marketing & Sales
+
+### Layout
+
+* Open-plan environment
+* East Wing: Marketing team
+* West Wing: Sales team
+
+### Directions Example
+
+* **To reach Olivia (2E-01):**
+
+  * Go to Floor 2
+  * Turn right
+  * First private office on the right
+
+* **To reach Ethan (Sales Desk W2):**
+
+  * Go to Floor 2
+  * Turn left
+  * Enter open sales area
+  * Second desk from entrance
+
+---
+
+## FLOOR 3 — Executive Offices
+
+### Layout
+
+* Quiet corridor design
+* East Wing: George, Alice, Strategy
+* West Wing: James, Legal
+
+### Directions Example
+
+* **To reach George (3E-01):**
+
+  * Go to Floor 3
+  * Exit lift/stairs
+  * Turn right (East Wing)
+  * First office on the right (glass corner office)
+
+* **To reach James (3W-01):**
+
+  * Go to Floor 3
+  * Turn left (West Wing)
+  * First office on the left
+
+---
+
+# 5. Navigation Examples for AI Testing
+
+### Query: “Where is George’s office?”
+
+**Answer Source:**
+
+* Floor 3 → East Wing → First office on right → Room 3E-01
+
+---
+
+### Query: “How do I get to the Design Studio?”
+
+**Answer Source:**
+
+* Floor 1 → Turn right → Enter East Wing → Glass studio area
+
+---
+
+### Query: “Where is the cleaner usually located?”
+
+**Answer Source:**
+
+* Base: 1W Utility Room
+* Moves across all floors
+
+---
+
+# 6. Key Internal Logic for AI Retrieval
+
+To maximize assistant performance, this document enables:
+
+* **Name → Location mapping**
+* **Role → Floor mapping**
+* **Department → Wing mapping**
+* **Step-by-step navigation instructions**
+
+---
+
+# 7. Summary
+
+Achiveum’s office is intentionally structured to reflect its philosophy:
+
+* **Top Floor:** Thought & Direction
+* **Middle Floor:** Communication & Growth
+* **Ground Floor:** Creation & Execution
+
+This layered structure ensures both **operational clarity** and **navigational simplicity**, making it ideal for AI-driven assistance and query testing.
+
+---
+
+**End of Document**

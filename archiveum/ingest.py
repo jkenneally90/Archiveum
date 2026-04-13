@@ -14,6 +14,8 @@ def extract_text(path: Path) -> str:
         return _read_text_file(path, suffix)
     if suffix == ".pdf":
         return _read_pdf(path)
+    if suffix == ".docx":
+        return _read_docx(path)
     raise ValueError(f"Unsupported file type: {path.suffix or '<none>'}")
 
 
@@ -72,6 +74,17 @@ def _read_pdf(path: Path) -> str:
     reader = PdfReader(str(path))
     pages = [page.extract_text() or "" for page in reader.pages]
     return "\n\n".join(pages)
+
+
+def _read_docx(path: Path) -> str:
+    try:
+        from docx import Document
+    except ImportError as exc:
+        raise RuntimeError("DOCX support requires the optional 'python-docx' dependency.") from exc
+
+    document = Document(str(path))
+    paragraphs = [paragraph.text.strip() for paragraph in document.paragraphs if paragraph.text.strip()]
+    return "\n\n".join(paragraphs)
 
 
 def _normalize_text(text: str) -> str:

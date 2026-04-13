@@ -32,9 +32,17 @@ class ArchiveumEmbeddings:
             "model": self.model,
             "input": texts,
         }
-        response = requests.post(self.url, json=payload, timeout=self.timeout)
-        response.raise_for_status()
-        data = response.json()
+        try:
+            response = requests.post(self.url, json=payload, timeout=self.timeout)
+            if not response.ok:
+                body = (response.text or "").strip()
+                detail = f"HTTP {response.status_code}"
+                if body:
+                    detail += f"; response={body}"
+                raise RuntimeError(f"Ollama embedding request failed for {self.url}: {detail}")
+            data = response.json()
+        except requests.RequestException as exc:
+            raise RuntimeError(f"Ollama embedding request failed for {self.url}: {exc}") from exc
 
         embeddings = data.get("embeddings")
         if isinstance(embeddings, list) and embeddings:

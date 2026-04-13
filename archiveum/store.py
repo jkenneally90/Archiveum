@@ -50,7 +50,7 @@ class ArchiveStore:
         query_vector: list[float],
         *,
         limit: int = 4,
-        min_score: float = 0.20,
+        min_score: float = 0.05,
         embedding_model: str | None = None,
     ) -> list[dict[str, Any]]:
         self.reload()
@@ -62,7 +62,10 @@ class ArchiveStore:
             chunk_vector = chunk.get("embedding")
             if not isinstance(chunk_vector, list):
                 continue
-            if embedding_model and chunk.get("embedding_model") != embedding_model:
+            # Only filter by embedding_model if both the model parameter AND the chunk's model are set.
+            # This allows legacy chunks without embedding_model metadata to be searchable.
+            chunk_model = chunk.get("embedding_model")
+            if embedding_model and chunk_model and chunk_model != embedding_model:
                 continue
 
             score = _cosine_similarity(query_vector, chunk_vector)
@@ -95,6 +98,15 @@ class ArchiveStore:
             "documents": len({str(chunk.get("source", "unknown")) for chunk in self._chunks}),
             "chunks": len(self._chunks),
         }
+
+    def remove_document(self, source_name: str) -> int:
+        self.reload()
+        before = len(self._chunks)
+        self._chunks = [chunk for chunk in self._chunks if str(chunk.get("source", "unknown")) != source_name]
+        removed = before - len(self._chunks)
+        if removed:
+            self._save()
+        return removed
 
     def _load(self) -> None:
         if not self.chunks_path.exists():
