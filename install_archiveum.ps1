@@ -208,6 +208,7 @@ function Update-Settings {
     }
 
     $Settings | Add-Member -NotePropertyName enable_voice -NotePropertyValue ([bool]$EnableVoice) -Force
+    $Settings | Add-Member -NotePropertyName speak_responses -NotePropertyValue ([bool]$EnableVoice) -Force
     $Settings | Add-Member -NotePropertyName piper_command -NotePropertyValue $PiperPath -Force
     $Settings | Add-Member -NotePropertyName piper_model_path -NotePropertyValue (Resolve-PiperModelPath) -Force
     $Settings | Add-Member -NotePropertyName piper_device -NotePropertyValue "windows-default" -Force

@@ -180,6 +180,7 @@ fallback_piper = project_dir / "models" / "piper" / "en_GB-northern_english_male
 chosen_piper = default_piper if default_piper.exists() else fallback_piper
 
 data["enable_voice"] = voice_enabled
+data["speak_responses"] = voice_enabled
 data["piper_command"] = "piper"
 data["piper_model_path"] = str(chosen_piper)
 
