@@ -316,12 +316,38 @@ def _default_settings_payload(paths: ArchiveumPaths) -> dict[str, Any]:
     }
 
 
+def _convert_windows_path_to_platform(path_str: str, paths: ArchiveumPaths) -> str | None:
+    """Convert Windows-style paths to current platform paths."""
+    if not path_str:
+        return None
+    # Detect Windows absolute paths (C:\ or C:/)
+    if path_str[1:3] == ":\\" or path_str[1:3] == ":/":
+        # Extract path after "Archiveum\" or "Archiveum/"
+        parts = path_str.replace("\\", "/").split("/")
+        try:
+            archiveum_idx = parts.index("Archiveum")
+            # Rebuild relative path from Archiveum onwards
+            relative_parts = parts[archiveum_idx + 1:]
+            new_path = paths.base_dir.joinpath(*relative_parts)
+            return str(new_path)
+        except ValueError:
+            pass
+    return None
+
+
 def _normalized_settings_data(data: dict[str, Any], paths: ArchiveumPaths) -> dict[str, Any]:
     normalized = dict(data)
     detected_piper_model = _resolve_default_piper_model_path(paths)
     current_piper_model = str(normalized.get("piper_model_path", "")).strip()
     default_piper_device = _default_piper_device()
     default_stt_model = _resolve_default_stt_model_path(paths)
+
+    # Auto-convert Windows paths to current platform
+    converted_piper = _convert_windows_path_to_platform(current_piper_model, paths)
+    if converted_piper:
+        print(f"[Settings] Converting Windows piper_model_path to: {converted_piper}")
+        current_piper_model = converted_piper
+        normalized["piper_model_path"] = converted_piper
 
     if not current_piper_model or not Path(current_piper_model).exists():
         normalized["piper_model_path"] = detected_piper_model
@@ -331,6 +357,13 @@ def _normalized_settings_data(data: dict[str, Any], paths: ArchiveumPaths) -> di
         normalized["piper_command"] = "piper"
 
     current_stt_model = str(normalized.get("stt_model", "")).strip()
+    # Auto-convert Windows paths for STT model
+    converted_stt = _convert_windows_path_to_platform(current_stt_model, paths)
+    if converted_stt:
+        print(f"[Settings] Converting Windows stt_model to: {converted_stt}")
+        current_stt_model = converted_stt
+        normalized["stt_model"] = converted_stt
+
     if not current_stt_model:
         normalized["stt_model"] = default_stt_model
     elif not Path(current_stt_model).exists() and current_stt_model.lower() in {
