@@ -138,6 +138,8 @@ class PiperTTS:
     
     def _do_speak(self, text: str):
         print(f"[Piper Debug] _do_speak called with command: '{self.command}'")
+        print(f"[Piper Debug] Model path: '{self.model_path}'")
+        print(f"[Piper Debug] Model exists: {Path(self.model_path).exists()}")
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir=self.tmp_dir) as f_wav:
             wav_file = f_wav.name
 
@@ -159,8 +161,15 @@ class PiperTTS:
             )
             with self._lock:
                 self._synth_proc = proc
-            proc.stdin.write(text)
-            proc.stdin.close()
+            try:
+                proc.stdin.write(text)
+                proc.stdin.close()
+            except ValueError as e:
+                # stdin was closed - Piper probably crashed
+                stdout, stderr = proc.communicate(timeout=5)
+                print(f"[Piper] ERROR: Piper crashed immediately. stderr: {stderr}")
+                print(f"[Piper] ERROR: Model path: {self.model_path}")
+                raise RuntimeError(f"Piper crashed: {stderr or 'unknown error'}")
             stdout, stderr = proc.communicate(timeout=30)
             if proc.returncode != 0:
                 raise RuntimeError(f"Piper exited with code {proc.returncode}: {stderr or stdout}")
