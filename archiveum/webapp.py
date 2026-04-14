@@ -5259,7 +5259,7 @@ snapshot_download(
 )
 print(f"base.en model saved to {target}")
 '@
-        $baseScript.Replace('__BASE_DIR__', $baseDir) | & $pythonPath -
+            $baseScript.Replace('__BASE_DIR__', $baseDir.Replace("\", "\\")) | & $pythonPath -
     }
 
     # Download tiny.en model
@@ -5267,28 +5267,24 @@ print(f"base.en model saved to {target}")
     if (-not (Test-Path -LiteralPath $tinyDir)) {
         Write-Status -Stage "Downloading tiny.en model" -Message "Downloading tiny.en speech model (faster)."
         New-Item -ItemType Directory -Force -Path $tinyDir | Out-Null
-        $downloadScript = @'
+        $tinyScript = @'
 from pathlib import Path
 from huggingface_hub import snapshot_download
 
-target = Path(r"__TARGET_DIR__")
+target = Path(r"__TINY_DIR__")
 target.mkdir(parents=True, exist_ok=True)
 snapshot_download(
     repo_id="Systran/faster-whisper-tiny.en",
     local_dir=str(target),
     local_dir_use_symlinks=False,
 )
-print(f"Speech model saved to {target}")
+print(f"tiny.en model saved to {target}")
 '@
-    $downloadScript = $downloadScript.Replace("__TARGET_DIR__", $targetDir.Replace("\", "\\"))
+            $tinyScript.Replace('__TINY_DIR__', $tinyDir.Replace("\", "\\")) | & $pythonPath -
+        }
+    }
 
-    Write-Status -Stage "Downloading local speech model" -Message "Downloading the recommended local speech model into the Archiveum project."
-    $tempScript = Join-Path $env:TEMP "archiveum_install_local_stt.py"
-    Set-Content -Path $tempScript -Value $downloadScript -Encoding UTF8
-    & $pythonPath $tempScript
-    Remove-Item -LiteralPath $tempScript -Force -ErrorAction SilentlyContinue
-
-    Write-Status -Stage "Install complete" -Message "Ollama, Piper, and the local speech model are ready. Return to Archiveum and refresh the setup page." -Active $false
+    Write-Status -Stage "Speech models ready" -Message "Both base.en and tiny.en models are available." -Active $false
 }
 
 try {

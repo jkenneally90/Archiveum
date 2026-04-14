@@ -6,6 +6,5 @@
   "custom_upload_categories": [],
   "custom_personas": [],
   "ollama_chat_model": "llama3.2:3b",
-  "ollama_embed_model": "nomic-embed-text",
-  "enable_voice": true
+  "ollama_embed_model": "nomic-embed-text"
 }
