@@ -5259,7 +5259,7 @@ snapshot_download(
 )
 print(f"base.en model saved to {target}")
 '@
-            $baseScript.Replace('__BASE_DIR__', $baseDir.Replace("\", "\\")) | & $pythonPath -
+        $baseScript.Replace('__BASE_DIR__', $baseDir.Replace("\", "\\")) | & $pythonPath -
     }
 
     # Download tiny.en model
@@ -5280,7 +5280,7 @@ snapshot_download(
 )
 print(f"tiny.en model saved to {target}")
 '@
-            $tinyScript.Replace('__TINY_DIR__', $tinyDir.Replace("\", "\\")) | & $pythonPath -
+        $tinyScript.Replace('__TINY_DIR__', $tinyDir.Replace("\", "\\")) | & $pythonPath -
         }
     }
 
