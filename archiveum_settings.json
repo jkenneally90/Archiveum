@@ -1,12 +1,10 @@
 {
-    "piper_model_path":  "C:\\Users\\james\\Documents\\Archiveum\\piper-voices\\en\\en_GB\\jenny_dioco\\medium\\en_GB-jenny_dioco-medium.onnx",
-    "piper_command":  "C:\\Users\\james\\Documents\\Archiveum\\tools\\piper\\piper.exe",
-    "stt_model":  "C:\\Users\\james\\Documents\\Archiveum\\models\\faster-whisper\\base.en",
-    "piper_device":  "windows-default",
-    "custom_upload_categories":  [
-
-                                 ],
-    "custom_personas":  [
-
-                        ]
+  "piper_model_path": "C:\\Users\\james\\Documents\\Archiveum\\piper-voices\\en\\en_GB\\jenny_dioco\\medium\\en_GB-jenny_dioco-medium.onnx",
+  "piper_command": "C:\\Users\\james\\AppData\\Local\\Programs\\Piper\\piper\\piper.exe",
+  "stt_model": "C:\\Users\\james\\Documents\\Archiveum\\models\\faster-whisper\\base.en",
+  "piper_device": "windows-default",
+  "custom_upload_categories": [],
+  "custom_personas": [],
+  "ollama_chat_model": "llama3.2:3b",
+  "ollama_embed_model": "nomic-embed-text"
 }
