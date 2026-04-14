@@ -107,6 +107,7 @@ class ArchiveumVoiceAssistant:
         self._active_public_session_id = ""
         self._vad = None
         self._stt = None
+        print(f"[Voice __init__] Creating TTS with piper_command: {self.assistant.settings.piper_command}")
         self._tts = PiperTTS(
             command=self.assistant.settings.piper_command,
             model_path=self._active_piper_model_path(),
@@ -134,6 +135,7 @@ class ArchiveumVoiceAssistant:
         self.config = VoiceConfig.from_settings(self.assistant.settings)
         self._frame_bytes = int(self.config.sample_rate * self.config.frame_duration_ms / 1000) * 2
         self._voice_commands_enabled = self._voice_commands_enabled or bool(self.assistant.settings.enable_voice)
+        print(f"[Voice refresh_settings] Creating TTS with piper_command: {self.assistant.settings.piper_command}")
         self._tts = PiperTTS(
             command=self.assistant.settings.piper_command,
             model_path=self._active_piper_model_path(),

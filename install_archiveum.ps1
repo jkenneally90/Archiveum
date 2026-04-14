@@ -61,6 +61,76 @@ function Resolve-PiperModelPath {
     return $Candidates[0]
 }
 
+function Ensure-PiperBinary {
+    # Check if piper is already on PATH
+    $PiperOnPath = Get-Command "piper.exe" -ErrorAction SilentlyContinue
+    if ($PiperOnPath) {
+        Write-Host "[Archiveum] Piper found on PATH: $($PiperOnPath.Source)"
+        return $PiperOnPath.Source
+    }
+
+    # Check if piper is in project tools directory
+    $ToolsDir = Join-Path $ProjectDir "tools"
+    $LocalPiper = Join-Path $ToolsDir "piper.exe"
+
+    if (Test-Path -LiteralPath $LocalPiper) {
+        Write-Host "[Archiveum] Piper found locally at: $LocalPiper"
+        return $LocalPiper
+    }
+
+    # Download Piper for Windows
+    Write-Section "Downloading Piper TTS for Windows"
+
+    $PiperVersion = "1.2.0"
+    $PiperZipName = "piper_windows_amd64.zip"
+    $PiperUrl = "https://github.com/rhasspy/piper/releases/download/v$PiperVersion/$PiperZipName"
+    $PiperZipPath = Join-Path $env:TEMP $PiperZipName
+
+    try {
+        Write-Host "[Archiveum] Downloading Piper v$PiperVersion from GitHub..."
+        Invoke-WebRequest -Uri $PiperUrl -OutFile $PiperZipPath -UseBasicParsing
+
+        Write-Host "[Archiveum] Extracting Piper to tools directory..."
+        New-Item -ItemType Directory -Path $ToolsDir -Force | Out-Null
+        Expand-Archive -Path $PiperZipPath -DestinationPath $ToolsDir -Force
+
+        # Clean up zip file
+        Remove-Item -Path $PiperZipPath -Force -ErrorAction SilentlyContinue
+
+        # Verify extraction
+        $ExtractedPiper = Join-Path $ToolsDir "piper.exe"
+        if (Test-Path -LiteralPath $ExtractedPiper) {
+            Write-Host "[Archiveum] Piper installed successfully at: $ExtractedPiper"
+            return $ExtractedPiper
+        } else {
+            # Try looking in a subdirectory if piper extracted to a subfolder
+            $Subdirs = Get-ChildItem -Path $ToolsDir -Directory -Filter "piper*" | Select-Object -First 1
+            if ($Subdirs) {
+                $NestedPiper = Join-Path $Subdirs.FullName "piper.exe"
+                if (Test-Path -LiteralPath $NestedPiper) {
+                    # Move piper.exe up to tools dir
+                    Move-Item -Path $NestedPiper -Destination $LocalPiper -Force
+                    # Also move any DLLs
+                    Get-ChildItem -Path $Subdirs.FullName -Filter "*.dll" | ForEach-Object {
+                        Move-Item -Path $_.FullName -Destination $ToolsDir -Force -ErrorAction SilentlyContinue
+                    }
+                    Remove-Item -Path $Subdirs.FullName -Recurse -Force -ErrorAction SilentlyContinue
+                    Write-Host "[Archiveum] Piper installed successfully at: $LocalPiper"
+                    return $LocalPiper
+                }
+            }
+            throw "Piper executable not found after extraction"
+        }
+    } catch {
+        Write-Warning "Failed to download Piper automatically. You will need to install Piper manually."
+        Write-Host "[Archiveum] Manual Piper installation:"
+        Write-Host "  1. Download from: https://github.com/rhasspy/piper/releases"
+        Write-Host "  2. Extract to: $ToolsDir"
+        Write-Host "  3. Or add piper.exe to your system PATH"
+        return "piper"
+    }
+}
+
 function Resolve-SttModelPath {
     $Candidates = @(
         (Join-Path $ProjectDir "models\faster-whisper\base.en"),
@@ -121,6 +191,8 @@ print(f"[Archiveum] Speech model saved to {target_dir}")
 }
 
 function Update-Settings {
+    param([string]$PiperPath = "piper")
+
     Write-Section "Patching archiveum_settings.json for Windows"
 
     if (Test-Path -LiteralPath $SettingsPath) {
@@ -130,7 +202,7 @@ function Update-Settings {
     }
 
     $Settings | Add-Member -NotePropertyName enable_voice -NotePropertyValue ([bool]$EnableVoice) -Force
-    $Settings | Add-Member -NotePropertyName piper_command -NotePropertyValue "piper" -Force
+    $Settings | Add-Member -NotePropertyName piper_command -NotePropertyValue $PiperPath -Force
     $Settings | Add-Member -NotePropertyName piper_model_path -NotePropertyValue (Resolve-PiperModelPath) -Force
     $Settings | Add-Member -NotePropertyName piper_device -NotePropertyValue "windows-default" -Force
     $Settings | Add-Member -NotePropertyName stt_model -NotePropertyValue (Resolve-SttModelPath) -Force
@@ -228,7 +300,8 @@ Write-Host "[Archiveum] Autostart enabled: $EnableAutostart"
 
 Ensure-Venv
 Ensure-LocalSttModel
-Update-Settings
+$PiperPath = Ensure-PiperBinary
+Update-Settings -PiperPath $PiperPath
 Run-SelfTest
 Enable-Autostart
 

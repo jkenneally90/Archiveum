@@ -2228,10 +2228,16 @@ async def test_voice(
     def _run_test() -> None:
         try:
             piper.speak("Archiveum voice test. Piper is connected and ready.")
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"[Voice Test] Error: {exc}")
+            import traceback
+            traceback.print_exc()
 
-    threading.Thread(target=_run_test, daemon=True).start()
+    # Use non-daemon thread and wait for speech to complete
+    test_thread = threading.Thread(target=_run_test, daemon=False)
+    test_thread.start()
+    test_thread.join(timeout=10)  # Wait up to 10 seconds for speech
+    
     assistant.runtime_status.mark_setup_step(
         "voice_tested",
         completed=bool(assistant.diagnostics().get("voice_ready", False)),

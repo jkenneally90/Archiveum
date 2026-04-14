@@ -106,15 +106,26 @@ class PiperTTS:
                     str(self.sample_rate),
                 ],
                 stdin=subprocess.PIPE,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
             )
             with self._lock:
                 self._synth_proc = proc
             proc.stdin.write(text)
             proc.stdin.close()
-            proc.wait()
+            stdout, stderr = proc.communicate(timeout=30)
+            if proc.returncode != 0:
+                raise RuntimeError(f"Piper exited with code {proc.returncode}: {stderr or stdout}")
+        except FileNotFoundError as exc:
+            print(f"[Piper] ERROR: Piper executable not found: '{self.command}'")
+            print(f"[Piper] Please install Piper or update piper_command in archiveum_settings.json")
+            print(f"[Piper] Download: https://github.com/rhasspy/piper/releases")
+            try:
+                os.remove(wav_file)
+            except Exception:
+                pass
+            return
         except Exception as exc:
             print(f"[Piper] Synthesis error: {exc}")
             try:
