@@ -91,6 +91,7 @@ class PiperTTS:
             self._is_speaking = False
     
     def _do_speak(self, text: str):
+        print(f"[Piper Debug] _do_speak called with command: '{self.command}'")
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir=self.tmp_dir) as f_wav:
             wav_file = f_wav.name
 
