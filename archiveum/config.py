@@ -424,10 +424,47 @@ def _resolve_default_stt_model_path(paths: ArchiveumPaths) -> str:
     return str(candidates[0])
 
 
+def _detect_linux_audio_device() -> str:
+    """Detect best audio output device - prefer ReSpeaker, then USB audio, then fallback."""
+    try:
+        import subprocess
+        result = subprocess.run(["aplay", "-l"], capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            lines = result.stdout.split("\n")
+            respeaker_card = None
+            usb_card = None
+            for line in lines:
+                # Look for ReSpeaker explicitly
+                if "respeaker" in line.lower():
+                    parts = line.split()
+                    if parts and parts[0] == "card":
+                        try:
+                            respeaker_card = int(parts[1].rstrip(":"))
+                            print(f"[Audio] ReSpeaker detected on card {respeaker_card}")
+                            return f"plughw:{respeaker_card},0"
+                        except (ValueError, IndexError):
+                            pass
+                # Look for any USB audio device as fallback
+                if "usb" in line.lower() and "audio" in line.lower():
+                    parts = line.split()
+                    if parts and parts[0] == "card":
+                        try:
+                            usb_card = int(parts[1].rstrip(":"))
+                        except (ValueError, IndexError):
+                            pass
+            # Use USB card if found but no ReSpeaker
+            if usb_card is not None:
+                print(f"[Audio] USB audio detected on card {usb_card}")
+                return f"plughw:{usb_card},0"
+    except Exception as e:
+        print(f"[Audio] Device detection failed: {e}, using default")
+    return "plughw:0,0"
+
+
 def _default_piper_device() -> str:
     if platform.system().lower() == "windows":
         return "windows-default"
-    return "plughw:0,0"
+    return _detect_linux_audio_device()
 
 
 def persist_settings(paths: ArchiveumPaths | None = None, updates: dict[str, Any] | None = None) -> Path:
