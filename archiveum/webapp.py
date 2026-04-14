@@ -3355,16 +3355,7 @@ def _render_admin_page() -> str:
       <p class="muted">Current Chat Model: <strong>{escape(current_chat)}</strong> | Current Embed Model: <strong>{escape(current_embed)}</strong></p>
     </section>
 
-{(_render_windows_piper_section(diagnostics, piper_form) if platform.system().lower() == "windows" else f"""
-    <section class="panel" style="margin-top: 20px;">
-      <div class="section-head">
-        <h2>Piper Voice Setup</h2>
-        <span class="badge">{escape(diagnostics['piper']['platform'])}</span>
-      </div>
-      <p>Configure Piper text-to-speech settings for voice responses.</p>
-      {piper_form}
-    </section>
-""")}
+    {_render_piper_section(diagnostics, piper_form)}
 
     {public_mode_form}
 
@@ -5148,6 +5139,22 @@ def _render_windows_piper_section(diagnostics: dict, piper_form: str) -> str:
         <li>Choose one of the bundled Archiveum voice models, or use a full <code>.onnx</code> path.</li>
         <li>Enable voice mode and save the settings when you're ready.</li>
       </ol>
+      {piper_form}
+    </section>
+    """
+
+
+def _render_piper_section(diagnostics: dict, piper_form: str) -> str:
+    """Render platform-specific Piper setup section."""
+    if platform.system().lower() == "windows":
+        return _render_windows_piper_section(diagnostics, piper_form)
+    return f"""
+    <section class="panel" style="margin-top: 20px;">
+      <div class="section-head">
+        <h2>Piper Voice Setup</h2>
+        <span class="badge">{escape(diagnostics['piper']['platform'])}</span>
+      </div>
+      <p>Configure Piper text-to-speech settings for voice responses.</p>
       {piper_form}
     </section>
     """
