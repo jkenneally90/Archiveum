@@ -69,13 +69,19 @@ function Ensure-PiperBinary {
         return $PiperOnPath.Source
     }
 
-    # Check if piper is in project tools directory
+    # Check if piper is in project tools directory (flat or in piper/ subdir)
     $ToolsDir = Join-Path $ProjectDir "tools"
     $LocalPiper = Join-Path $ToolsDir "piper.exe"
+    $NestedPiper = Join-Path $ToolsDir "piper\piper.exe"
 
     if (Test-Path -LiteralPath $LocalPiper) {
         Write-Host "[Archiveum] Piper found locally at: $LocalPiper"
         return $LocalPiper
+    }
+
+    if (Test-Path -LiteralPath $NestedPiper) {
+        Write-Host "[Archiveum] Piper found locally at: $NestedPiper"
+        return $NestedPiper
     }
 
     # Download Piper for Windows

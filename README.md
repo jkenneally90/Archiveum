@@ -58,8 +58,8 @@ Whether you're on a high-end Windows 11 workstation or a power-efficient Jetson 
 # Ubuntu/Jetson
 chmod +x install_archiveum.sh && ./install_archiveum.sh
 
-# Windows
-PowerShell -ExecutionPolicy Bypass -File .\install_archiveum.ps1
+# Windows (with voice enabled)
+PowerShell -ExecutionPolicy Bypass -File .\install_archiveum.ps1 -EnableVoice
 ```
 
 ### 🎭 Persona System
@@ -147,8 +147,8 @@ cd archiveum
 # Linux/macOS
 chmod +x install_archiveum.sh && ./install_archiveum.sh
 
-# Windows
-PowerShell -ExecutionPolicy Bypass -File .\install_archiveum.ps1
+# Windows (with voice enabled)
+PowerShell -ExecutionPolicy Bypass -File .\install_archiveum.ps1 -EnableVoice
 ```
 
 **Option 2: Manual Setup**
