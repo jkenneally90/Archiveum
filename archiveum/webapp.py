@@ -3355,20 +3355,16 @@ def _render_admin_page() -> str:
       <p class="muted">Current Chat Model: <strong>{escape(current_chat)}</strong> | Current Embed Model: <strong>{escape(current_embed)}</strong></p>
     </section>
 
+{(_render_windows_piper_section(diagnostics, piper_form) if platform.system().lower() == "windows" else f"""
     <section class="panel" style="margin-top: 20px;">
       <div class="section-head">
-        <h2>Windows Piper Setup</h2>
+        <h2>Piper Voice Setup</h2>
         <span class="badge">{escape(diagnostics['piper']['platform'])}</span>
       </div>
-      <p>Voice setup can feel fiddly, so this section keeps it simple. Once Piper is installed, you can point Archiveum to it here and pick the voice model you want to use.</p>
-      <ol class="steps">
-        <li>Install Piper for Windows and find <code>piper.exe</code>.</li>
-        <li>Add it to <code>PATH</code> or paste the full executable path below.</li>
-        <li>Choose one of the bundled Archiveum voice models, or use a full <code>.onnx</code> path.</li>
-        <li>Enable voice mode and save the settings when you’re ready.</li>
-      </ol>
+      <p>Configure Piper text-to-speech settings for voice responses.</p>
       {piper_form}
     </section>
+""")}
 
     {public_mode_form}
 
@@ -4649,7 +4645,7 @@ def _render_setup_wizard(diagnostics: dict, presets: list[dict], recommended: st
             <span class="badge">{'Ready' if step_state['piper_configured']['completed'] else 'Needs action'}</span>
           </div>
           <p>Once the models are sorted, we can get voice ready by helping Archiveum prepare Piper, a voice model, and the local speech model used for offline listening.</p>
-          <p class="muted">If you launch the installer assistant, just accept the Windows prompts when they appear so the setup can keep moving.</p>
+          {f"""<p class="muted">If you launch the installer assistant, just accept the Windows prompts when they appear so the setup can keep moving.</p>
           <div class="button-row">
             <form action="/setup/piper/autodetect" method="post">
               <input type="hidden" name="redirect_to" value="/setup">
@@ -4659,7 +4655,14 @@ def _render_setup_wizard(diagnostics: dict, presets: list[dict], recommended: st
               <input type="hidden" name="redirect_to" value="/setup">
               <button type="submit">Start Windows Installer</button>
             </form>
+          </div>""" if platform.system().lower() == "windows" else f"""
+          <div class="button-row">
+            <form action="/setup/piper/autodetect" method="post">
+              <input type="hidden" name="redirect_to" value="/setup">
+              <button type="submit">{escape(auto_detect_label)}</button>
+            </form>
           </div>
+          """}
           <p class="muted">Current command: {escape(settings.get('piper_command', ''))}</p>
           <p class="muted">Current model: {escape(settings.get('piper_model_path', ''))}</p>
           <p class="muted">Local speech model: {escape(stt_model.get('detail', ''))}</p>
@@ -4878,6 +4881,9 @@ def _matching_preset_name(settings: dict, presets: list[dict]) -> str:
 
 
 def _render_helper_script_block(wizard_state: dict) -> str:
+    """Render Windows helper script block - only shown on Windows."""
+    if platform.system().lower() != "windows":
+        return ""
     helper_ready = bool(wizard_state.get("helper_script_ready", False))
     helper_path = str(wizard_state.get("helper_script_path", "") or "")
     helper_note = str(wizard_state.get("helper_script_note", "") or "")
@@ -4965,17 +4971,29 @@ def _next_action_details(
         }
 
     if step_id == "piper_configured":
-        form_html = (
-            "<form action='/setup/piper/helper/run' method='post'>"
-            "<input type='hidden' name='redirect_to' value='/setup'>"
-            "<div class='button-row'>"
-            "<button type='submit'>Start Windows Installer</button>"
-            "</div>"
-            "</form>"
-        )
+        if platform.system().lower() == "windows":
+            form_html = (
+                "<form action='/setup/piper/helper/run' method='post'>"
+                "<input type='hidden' name='redirect_to' value='/setup'>"
+                "<div class='button-row'>"
+                "<button type='submit'>Start Windows Installer</button>"
+                "</div>"
+                "</form>"
+            )
+            message = "Voice is not fully prepared yet. Start the Windows installer and Archiveum will help fetch Piper and the local speech model, then you can come straight back here."
+        else:
+            form_html = (
+                "<form action='/setup/piper/autodetect' method='post'>"
+                "<input type='hidden' name='redirect_to' value='/setup'>"
+                "<div class='button-row'>"
+                "<button type='submit'>Auto-Detect Piper</button>"
+                "</div>"
+                "</form>"
+            )
+            message = "Voice is not fully prepared yet. Ensure Piper is installed on your system and click Auto-Detect to configure it."
         return {
             "step_name": "Prepare voice tools",
-            "message": "Voice is not fully prepared yet. Start the Windows installer and Archiveum will help fetch Piper and the local speech model, then you can come straight back here.",
+            "message": message,
             "kind": "form",
             "label": "",
             "target": "",
@@ -5113,6 +5131,26 @@ def _nova_style_prompt(*, assistant_name: str, user_name: str, style: str, brevi
         "She may occasionally use small conversational sounds like 'Yeah,' 'Hmm,' or 'I see,' when it feels natural. "
         "She may ask a short, gentle follow-up question if it fits the moment."
     )
+
+
+def _render_windows_piper_section(diagnostics: dict, piper_form: str) -> str:
+    """Render Windows-specific Piper setup section with helper download/launch."""
+    return f"""
+    <section class="panel" style="margin-top: 20px;">
+      <div class="section-head">
+        <h2>Windows Piper Setup</h2>
+        <span class="badge">{escape(diagnostics['piper']['platform'])}</span>
+      </div>
+      <p>Voice setup can feel fiddly, so this section keeps it simple. Once Piper is installed, you can point Archiveum to it here and pick the voice model you want to use.</p>
+      <ol class="steps">
+        <li>Install Piper for Windows and find <code>piper.exe</code>.</li>
+        <li>Add it to <code>PATH</code> or paste the full executable path below.</li>
+        <li>Choose one of the bundled Archiveum voice models, or use a full <code>.onnx</code> path.</li>
+        <li>Enable voice mode and save the settings when you're ready.</li>
+      </ol>
+      {piper_form}
+    </section>
+    """
 
 
 def _ensure_windows_piper_helper() -> Path:
