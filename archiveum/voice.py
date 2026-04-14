@@ -288,6 +288,7 @@ class ArchiveumVoiceAssistant:
                         self._last_error = ""
                         answer = result["answer"]
 
+                        print(f"[Voice Debug] speak_responses={self.assistant.settings.speak_responses}, _tts={self._tts is not None}")
                         if self.assistant.settings.speak_responses:
                             self._status_message = "Speaking the latest reply."
                         else:
@@ -297,7 +298,14 @@ class ArchiveumVoiceAssistant:
                         if self.assistant.settings.speak_responses:
                             self._tts_is_speaking = True
                             try:
-                                self._tts.speak(to_spoken_text(answer))
+                                spoken_text = to_spoken_text(answer)
+                                print(f"[Voice Debug] Calling _tts.speak() with text length: {len(spoken_text)}")
+                                self._tts.speak(spoken_text)
+                                print("[Voice Debug] _tts.speak() completed")
+                            except Exception as speak_exc:
+                                print(f"[Voice Debug] ERROR in _tts.speak(): {speak_exc}")
+                                import traceback
+                                traceback.print_exc()
                             finally:
                                 self._tts_is_speaking = False
                             self._finish_speaking_turn()
