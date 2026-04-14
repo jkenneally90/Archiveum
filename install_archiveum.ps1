@@ -161,18 +161,25 @@ function Ensure-LocalSttModel {
         return
     }
 
-    $PreferredModelPath = Resolve-SttModelPath
-    if (Test-Path -LiteralPath $PreferredModelPath) {
-        Write-Host "[Archiveum] Local STT model already present at: $PreferredModelPath"
+    $TargetRoot = Join-Path $ProjectDir "models\faster-whisper"
+    $BaseModelDir = Join-Path $TargetRoot "base.en"
+    $TinyModelDir = Join-Path $TargetRoot "tiny.en"
+
+    # Check if models already exist
+    $BaseExists = Test-Path -LiteralPath $BaseModelDir
+    $TinyExists = Test-Path -LiteralPath $TinyModelDir
+
+    if ($BaseExists -and $TinyExists) {
+        Write-Host "[Archiveum] Local STT models already present (base.en and tiny.en)"
         return
     }
 
-    Write-Section "Downloading local speech-to-text model for Windows"
-    $TargetRoot = Join-Path $ProjectDir "models\faster-whisper"
-    $TargetModelDir = Join-Path $TargetRoot "base.en"
     New-Item -ItemType Directory -Path $TargetRoot -Force | Out-Null
 
-    @'
+    # Download base.en if not present
+    if (-not $BaseExists) {
+        Write-Section "Downloading base.en speech-to-text model"
+        @'
 from __future__ import annotations
 
 import os
@@ -189,10 +196,38 @@ snapshot_download(
     local_dir_use_symlinks=False,
 )
 
-print(f"[Archiveum] Speech model saved to {target_dir}")
+print(f"[Archiveum] base.en model saved to {target_dir}")
 '@ | ForEach-Object {
-        $env:ARCHIVEUM_STT_TARGET = $TargetModelDir
-        $_ | & $PythonInVenv -
+            $env:ARCHIVEUM_STT_TARGET = $BaseModelDir
+            $_ | & $PythonInVenv -
+        }
+    }
+
+    # Download tiny.en if not present
+    if (-not $TinyExists) {
+        Write-Section "Downloading tiny.en speech-to-text model"
+        @'
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from huggingface_hub import snapshot_download
+
+target_dir = Path(os.environ["ARCHIVEUM_STT_TARGET"]).resolve()
+target_dir.mkdir(parents=True, exist_ok=True)
+
+snapshot_download(
+    repo_id="Systran/faster-whisper-tiny.en",
+    local_dir=str(target_dir),
+    local_dir_use_symlinks=False,
+)
+
+print(f"[Archiveum] tiny.en model saved to {target_dir}")
+'@ | ForEach-Object {
+            $env:ARCHIVEUM_STT_TARGET = $TinyModelDir
+            $_ | & $PythonInVenv -
+        }
     }
 }
 

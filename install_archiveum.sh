@@ -135,6 +135,7 @@ from huggingface_hub import snapshot_download
 target_root = Path(os.environ["ARCHIVEUM_STT_TARGET_ROOT"]).resolve()
 
 models = [
+    ("Systran/faster-whisper-base.en", target_root / "base.en"),
     ("Systran/faster-whisper-tiny.en", target_root / "tiny.en"),
     ("Systran/faster-whisper-tiny", target_root / "tiny"),
 ]
