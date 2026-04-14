@@ -34,7 +34,7 @@ class PiperTTS:
         self.platform_name = platform.system().lower()
         self.device = device or self._default_device()
         self.tmp_dir = tmp_dir or tempfile.gettempdir()
-        self.command = command
+        self.command = self._resolve_piper_command(command)
 
         self._play_proc: subprocess.Popen | None = None
         self._synth_proc: subprocess.Popen | None = None
@@ -74,6 +74,52 @@ class PiperTTS:
                 pass
 
         self._current_wav_file = None
+
+    def _resolve_piper_command(self, command: str) -> str:
+        """Auto-detect Piper executable in common locations if not found on PATH."""
+        # If command is already a full path that exists, use it
+        if Path(command).exists():
+            return command
+
+        # If it's just 'piper' or 'piper.exe', try to find it
+        if command in ("piper", "piper.exe"):
+            # Try to find piper on PATH first
+            try:
+                result = subprocess.run(
+                    ["where", "piper.exe"] if self.platform_name == "windows" else ["which", "piper"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    found = result.stdout.strip().split("\n")[0].strip()
+                    if found:
+                        print(f"[Piper] Found on PATH: {found}")
+                        return found
+            except Exception:
+                pass
+
+            # Search common locations on Windows
+            if self.platform_name == "windows":
+                common_paths = [
+                    Path.home() / "AppData" / "Local" / "Programs" / "Piper" / "piper" / "piper.exe",
+                    Path.home() / "AppData" / "Local" / "Piper" / "piper.exe",
+                    Path("C:/Program Files/Piper/piper.exe"),
+                    Path("C:/Program Files (x86)/Piper/piper.exe"),
+                ]
+                # Also check if running from project directory with tools/piper
+                project_dir = Path.cwd()
+                if (project_dir / "tools" / "piper" / "piper.exe").exists():
+                    common_paths.insert(0, project_dir / "tools" / "piper" / "piper.exe")
+                if (project_dir / "tools" / "piper.exe").exists():
+                    common_paths.insert(0, project_dir / "tools" / "piper.exe")
+
+                for path in common_paths:
+                    if path.exists():
+                        print(f"[Piper] Auto-detected at: {path}")
+                        return str(path)
+
+        return command
 
     @property
     def is_speaking(self) -> bool:
