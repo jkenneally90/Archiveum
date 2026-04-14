@@ -5231,17 +5231,43 @@ function Install-Piper {
 }
 
 function Install-LocalSpeechModel {
-    Write-Status -Stage "Installing local speech model" -Message "Preparing the offline speech-to-text model for Archiveum."
+    Write-Status -Stage "Installing local speech models" -Message "Preparing the offline speech-to-text models for Archiveum."
 
     $pythonPath = Join-Path $ProjectDir ".venv\Scripts\python.exe"
     if (-not (Test-Path -LiteralPath $pythonPath)) {
         throw "Archiveum could not find its virtual environment Python at $pythonPath."
     }
 
-    $targetDir = Join-Path $ProjectDir "models\faster-whisper\tiny.en"
-    New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+    $modelsRoot = Join-Path $ProjectDir "models\faster-whisper"
+    New-Item -ItemType Directory -Force -Path $modelsRoot | Out-Null
 
-    $downloadScript = @'
+    # Download base.en model
+    $baseDir = Join-Path $modelsRoot "base.en"
+    if (-not (Test-Path -LiteralPath $baseDir)) {
+        Write-Status -Stage "Downloading base.en model" -Message "Downloading base.en speech model (better accuracy)."
+        New-Item -ItemType Directory -Force -Path $baseDir | Out-Null
+        $baseScript = @'
+from pathlib import Path
+from huggingface_hub import snapshot_download
+
+target = Path(r"__BASE_DIR__")
+target.mkdir(parents=True, exist_ok=True)
+snapshot_download(
+    repo_id="Systran/faster-whisper-base.en",
+    local_dir=str(target),
+    local_dir_use_symlinks=False,
+)
+print(f"base.en model saved to {target}")
+'@
+        $baseScript.Replace('__BASE_DIR__', $baseDir) | & $pythonPath -
+    }
+
+    # Download tiny.en model
+    $tinyDir = Join-Path $modelsRoot "tiny.en"
+    if (-not (Test-Path -LiteralPath $tinyDir)) {
+        Write-Status -Stage "Downloading tiny.en model" -Message "Downloading tiny.en speech model (faster)."
+        New-Item -ItemType Directory -Force -Path $tinyDir | Out-Null
+        $downloadScript = @'
 from pathlib import Path
 from huggingface_hub import snapshot_download
 
