@@ -4636,24 +4636,7 @@ def _render_setup_wizard(diagnostics: dict, presets: list[dict], recommended: st
             <span class="badge">{'Ready' if step_state['piper_configured']['completed'] else 'Needs action'}</span>
           </div>
           <p>Once the models are sorted, we can get voice ready by helping Archiveum prepare Piper, a voice model, and the local speech model used for offline listening.</p>
-          {f"""<p class="muted">If you launch the installer assistant, just accept the Windows prompts when they appear so the setup can keep moving.</p>
-          <div class="button-row">
-            <form action="/setup/piper/autodetect" method="post">
-              <input type="hidden" name="redirect_to" value="/setup">
-              <button type="submit">{escape(auto_detect_label)}</button>
-            </form>
-            <form action="/setup/piper/helper/run" method="post">
-              <input type="hidden" name="redirect_to" value="/setup">
-              <button type="submit">Start Windows Installer</button>
-            </form>
-          </div>""" if platform.system().lower() == "windows" else f"""
-          <div class="button-row">
-            <form action="/setup/piper/autodetect" method="post">
-              <input type="hidden" name="redirect_to" value="/setup">
-              <button type="submit">{escape(auto_detect_label)}</button>
-            </form>
-          </div>
-          """}
+          {_render_wizard_voice_buttons(auto_detect_label)}
           <p class="muted">Current command: {escape(settings.get('piper_command', ''))}</p>
           <p class="muted">Current model: {escape(settings.get('piper_model_path', ''))}</p>
           <p class="muted">Local speech model: {escape(stt_model.get('detail', ''))}</p>
@@ -5158,6 +5141,28 @@ def _render_piper_section(diagnostics: dict, piper_form: str) -> str:
       {piper_form}
     </section>
     """
+
+
+def _render_wizard_voice_buttons(auto_detect_label: str) -> str:
+    """Render platform-specific voice buttons for setup wizard."""
+    if platform.system().lower() == "windows":
+        return f"""<p class="muted">If you launch the installer assistant, just accept the Windows prompts when they appear so the setup can keep moving.</p>
+          <div class="button-row">
+            <form action="/setup/piper/autodetect" method="post">
+              <input type="hidden" name="redirect_to" value="/setup">
+              <button type="submit">{escape(auto_detect_label)}</button>
+            </form>
+            <form action="/setup/piper/helper/run" method="post">
+              <input type="hidden" name="redirect_to" value="/setup">
+              <button type="submit">Start Windows Installer</button>
+            </form>
+          </div>"""
+    return f"""<div class="button-row">
+            <form action="/setup/piper/autodetect" method="post">
+              <input type="hidden" name="redirect_to" value="/setup">
+              <button type="submit">{escape(auto_detect_label)}</button>
+            </form>
+          </div>"""
 
 
 def _ensure_windows_piper_helper() -> Path:
