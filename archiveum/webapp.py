@@ -5281,7 +5281,6 @@ snapshot_download(
 print(f"tiny.en model saved to {target}")
 '@
         $tinyScript.Replace('__TINY_DIR__', $tinyDir.Replace("\", "\\")) | & $pythonPath -
-        }
     }
 
     Write-Status -Stage "Speech models ready" -Message "Both base.en and tiny.en models are available." -Active $false
