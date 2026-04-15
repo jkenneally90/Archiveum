@@ -157,7 +157,7 @@ class PiperTTS:
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True,
+                # text=False - Piper expects binary input
             )
             with self._lock:
                 self._synth_proc = proc
@@ -173,7 +173,7 @@ class PiperTTS:
                 print(f"[Piper] ERROR: returncode: {proc.returncode}")
                 raise RuntimeError(f"Piper crashed on startup: {stderr or stdout or 'unknown'}")
             try:
-                proc.stdin.write(text)
+                proc.stdin.write(text.encode('utf-8'))
                 proc.stdin.close()
             except ValueError as e:
                 # stdin was closed - Piper probably crashed
