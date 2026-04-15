@@ -161,13 +161,24 @@ class PiperTTS:
             )
             with self._lock:
                 self._synth_proc = proc
+            # Wait briefly to see if Piper crashes immediately
+            import time
+            time.sleep(0.1)
+            if proc.poll() is not None:
+                # Piper exited immediately
+                stdout, stderr = proc.communicate()
+                print(f"[Piper] ERROR: Piper crashed on startup!")
+                print(f"[Piper] ERROR: stdout: {stdout}")
+                print(f"[Piper] ERROR: stderr: {stderr}")
+                print(f"[Piper] ERROR: returncode: {proc.returncode}")
+                raise RuntimeError(f"Piper crashed on startup: {stderr or stdout or 'unknown'}")
             try:
                 proc.stdin.write(text)
                 proc.stdin.close()
             except ValueError as e:
                 # stdin was closed - Piper probably crashed
                 stdout, stderr = proc.communicate(timeout=5)
-                print(f"[Piper] ERROR: Piper crashed immediately. stderr: {stderr}")
+                print(f"[Piper] ERROR: Piper crashed after write. stderr: {stderr}")
                 print(f"[Piper] ERROR: Model path: {self.model_path}")
                 raise RuntimeError(f"Piper crashed: {stderr or 'unknown error'}")
             stdout, stderr = proc.communicate(timeout=30)
