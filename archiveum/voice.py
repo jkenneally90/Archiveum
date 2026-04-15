@@ -235,8 +235,11 @@ class ArchiveumVoiceAssistant:
         print("[Voice] Archiveum voice mode ready.")
         print("[Voice] Speak naturally. Pause after each question.")
         self._status_message = "Voice mode is active and listening."
+        # Use direct ALSA device to avoid PulseAudio conflicts
+        input_device = "hw:0,0"  # ReSpeaker 4 Mic Array
         try:
             with sd.InputStream(
+                device=input_device,
                 samplerate=self.config.sample_rate,
                 channels=self.config.channels,
                 dtype="int16",
@@ -356,8 +359,11 @@ class ArchiveumVoiceAssistant:
 
     def _command_listener_loop(self) -> None:
         activate_requested = False
+        # Use direct ALSA device to avoid PulseAudio conflicts
+        input_device = "hw:0,0"  # ReSpeaker 4 Mic Array
         try:
             with sd.InputStream(
+                device=input_device,
                 samplerate=self.config.sample_rate,
                 channels=self.config.channels,
                 dtype="int16",
