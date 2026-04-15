@@ -177,11 +177,14 @@ class PiperTTS:
                 proc.stdin.close()
             except ValueError as e:
                 # stdin was closed - Piper probably crashed
-                stdout, stderr = proc.communicate(timeout=5)
+                proc.wait(timeout=5)
+                stdout, stderr = proc.stdout.read(), proc.stderr.read()
                 print(f"[Piper] ERROR: Piper crashed after write. stderr: {stderr}")
                 print(f"[Piper] ERROR: Model path: {self.model_path}")
                 raise RuntimeError(f"Piper crashed: {stderr or 'unknown error'}")
-            stdout, stderr = proc.communicate(timeout=30)
+            # Wait for Piper to finish, don't use communicate() since we closed stdin
+            proc.wait(timeout=30)
+            stdout, stderr = proc.stdout.read(), proc.stderr.read()
             if proc.returncode != 0:
                 raise RuntimeError(f"Piper exited with code {proc.returncode}: {stderr or stdout}")
         except FileNotFoundError as exc:
