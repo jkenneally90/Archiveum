@@ -71,11 +71,18 @@ def _shutdown_voice_runtime() -> None:
 
 
 def _resolve_persona_voice_model(persona_id: str | None = None) -> str:
+    from archiveum.config import _convert_windows_path_to_platform, build_paths
     settings = assistant.settings
     target_persona_id = (persona_id or settings.current_persona_id or "").strip()
     if target_persona_id:
         persona = get_persona(target_persona_id)
         if persona and persona.voice_model:
+            # Convert Windows paths in persona voice models
+            paths = build_paths()
+            converted = _convert_windows_path_to_platform(persona.voice_model, paths)
+            if converted:
+                print(f"[Persona] Converting Windows voice_model path to: {converted}")
+                return converted
             return persona.voice_model
     return settings.piper_model_path
 
