@@ -434,8 +434,9 @@ def _detect_linux_audio_device() -> str:
             respeaker_card = None
             usb_card = None
             for line in lines:
-                # Look for ReSpeaker explicitly
-                if "respeaker" in line.lower():
+                line_lower = line.lower()
+                # Look for ReSpeaker variants (respeaker, ArrayUAC10, 4 mic array, etc.)
+                if any(x in line_lower for x in ["respeaker", "arrayuac", "4 mic array", "mic array"]):
                     parts = line.split()
                     if parts and parts[0] == "card":
                         try:
@@ -445,7 +446,7 @@ def _detect_linux_audio_device() -> str:
                         except (ValueError, IndexError):
                             pass
                 # Look for any USB audio device as fallback
-                if "usb" in line.lower() and "audio" in line.lower():
+                if "usb" in line_lower and "audio" in line_lower:
                     parts = line.split()
                     if parts and parts[0] == "card":
                         try:
