@@ -126,8 +126,15 @@ class ArchiveumVoiceAssistant:
         return self.assistant.settings.current_persona_id or "nova"
 
     def _active_piper_model_path(self) -> str:
+        from archiveum.config import _convert_windows_path_to_platform, build_paths
         persona = get_persona(self._active_persona_id())
         if persona and persona.voice_model:
+            # Convert Windows paths in persona voice models
+            paths = build_paths()
+            converted = _convert_windows_path_to_platform(persona.voice_model, paths)
+            if converted:
+                print(f"[Voice] Converting Windows voice_model path to: {converted}")
+                return converted
             return persona.voice_model
         return self.config.piper_model_path
 
